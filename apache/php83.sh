@@ -25,6 +25,12 @@ install_php() {
     a2enconf php8.3-fpm
     systemctl restart apache2 php8.3-fpm
     echo "PHP 8.3-FPM configurado como principal."
+
+    echo "Criando a página info.php..."
+    echo "<?php phpinfo(); ?>" > /var/www/html/info.php
+    chown www-data:www-data /var/www/html/info.php
+    chmod 644 /var/www/html/info.php
+    echo "Página info.php criada em /var/www/html/info.php."
 }
 
 # Função para remover PHP 8.3 e módulos
@@ -36,9 +42,13 @@ remove_php() {
 
     read -p "Deseja apagar a pasta de configuração do PHP? (s/n): " choice
     if [[ "$choice" == "s" || "$choice" == "S" ]]; then
-        rm -rf /etc/php/8.3
+        rm -rf /etc/php
         echo "Pasta de configuração do PHP apagada."
     fi
+
+    echo "Removendo a página info.php..."
+    rm -f /var/www/html/info.php
+    echo "Página info.php removida."
 }
 
 # Menu principal
