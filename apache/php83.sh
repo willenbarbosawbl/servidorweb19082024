@@ -1,70 +1,59 @@
 #!/bin/bash
 
-# Função para instalar PHP 8.3, módulos e configurar PHP-FPM como principal
+# Função para instalar PHP 8.3 e módulos necessários
 install_php() {
     echo "Instalando PHP 8.3 e módulos..."
-    sudo apt-get update
-    sudo apt-get install php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip -y
+    apt update
+    apt install -y php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip libapache2-mod-php8.3
+    echo "PHP 8.3 e módulos instalados com sucesso."
 
     echo "Configurando PHP 8.3 para produção..."
-    sudo sed -i "s/^expose_php = .*/expose_php = Off/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^display_errors = .*/display_errors = Off/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^display_startup_errors = .*/display_startup_errors = Off/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^error_reporting = .*/error_reporting = E_ALL \& ~E_DEPRECATED \& ~E_STRICT/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^session.cookie_secure = .*/session.cookie_secure = On/" /etc/php/8.3/fpm/php.ini
-    sudo sed -i "s/^session.cookie_httponly = .*/session.cookie_httponly = On/" /etc/php/8.3/fpm/php.ini
+    sed -i 's/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php/8.3/fpm/php.ini
+    sed -i 's/^display_errors = On/display_errors = Off/' /etc/php/8.3/fpm/php.ini
+    sed -i 's/^expose_php = On/expose_php = Off/' /etc/php/8.3/fpm/php.ini
+    sed -i 's/^;session.cookie_secure =/session.cookie_secure =/' /etc/php/8.3/fpm/php.ini
+    sed -i 's/^;opcache.enable=0/opcache.enable=1/' /etc/php/8.3/fpm/php.ini
+    echo "Configuração de produção aplicada ao PHP 8.3."
 
-    echo "Configurando Apache para usar PHP-FPM..."
-    sudo a2enmod proxy_fcgi setenvif
-    sudo a2enconf php8.3-fpm
-    sudo systemctl restart apache2
-    sudo systemctl restart php8.3-fpm
+    echo "Habilitando mod rewrite no Apache2..."
+    a2enmod rewrite
+    systemctl restart apache2
+    echo "mod_rewrite habilitado no Apache2."
 
-    echo "PHP 8.3 e PHP-FPM instalados e configurados com sucesso."
+    echo "Configurando PHP-FPM como principal..."
+    a2dismod php8.3
+    a2enconf php8.3-fpm
+    systemctl restart apache2 php8.3-fpm
+    echo "PHP 8.3-FPM configurado como principal."
 }
 
-# Função para desinstalar PHP 8.3 e módulos
-uninstall_php() {
-    echo "Desinstalando PHP 8.3 e módulos..."
-    sudo systemctl stop php8.3-fpm
-    sudo apt-get remove --purge php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip -y
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
-    echo "PHP 8.3 desinstalado e sistema limpo."
+# Função para remover PHP 8.3 e módulos
+remove_php() {
+    echo "Removendo PHP 8.3 e módulos..."
+    apt purge -y php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip libapache2-mod-php8.3
+    apt autoremove -y
+    echo "PHP 8.3 e módulos removidos com sucesso."
+
+    read -p "Deseja apagar a pasta de configuração do PHP? (s/n): " choice
+    if [[ "$choice" == "s" || "$choice" == "S" ]]; then
+        rm -rf /etc/php/8.3
+        echo "Pasta de configuração do PHP apagada."
+    fi
 }
 
-# Função para limpar o sistema após instalação ou desinstalação
-clean_system() {
-    echo "Limpando o sistema..."
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
-    echo "Sistema limpo."
-}
-
-# Menu de opções
+# Menu principal
 while true; do
-    echo "Escolha uma opção:"
-    echo "1) Instalar PHP 8.3"
-    echo "2) Desinstalar PHP 8.3"
-    echo "0) Sair"
-    read -rp "Opção: " opcao
+    echo "1. Instalar PHP 8.3"
+    echo "2. Configurar PHP 8.3 para produção"
+    echo "3. Remover PHP 8.3"
+    echo "0. Sair"
+    read -p "Escolha uma opção: " option
 
-    case $opcao in
-        1)
-            install_php
-            clean_system
-            ;;
-        2)
-            uninstall_php
-            clean_system
-            ;;
-        0)
-            echo "Saindo..."
-            exit 0
-            ;;
-        *)
-            echo "Opção inválida. Tente novamente."
-            ;;
+    case $option in
+        1) install_php ;;
+        2) echo "Configurações já aplicadas durante a instalação." ;;
+        3) remove_php ;;
+        0) echo "Saindo..."; exit 0 ;;
+        *) echo "Opção inválida. Tente novamente." ;;
     esac
 done
