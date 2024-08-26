@@ -1,302 +1,136 @@
 #!/bin/bash
 
-# Lista de TLDs internacionais e brasileiros
-TLDs_BRASIL=(
-    "br" "com.br" "net.br" "org.br" "gov.br" "edu.br" "mil.br" "art.br" "blog.br" "eco.br" "emp.br" "ind.br" "inf.br" "med.br" "rec.br" "srv.br" "tur.br" "adv.br" "agr.br" "am.br" "b.br" "cim.br" "cng.br" "cnt.br" "coop.br" "eng.br" "esp.br" "etc.br" "eti.br" "far.br" "fnd.br" "fot.br" "fst.br" "ggf.br" "imb.br" "jor.br" "lel.br" "mat.br" "mus.br" "not.br" "odo.br" "ppg.br" "psc.br" "psi.br" "qsl.br" "slg.br" "tmp.br" "trd.br" "vet.br"
+# Lista completa de domínios internacionais e do Brasil
+DOMINIOS_VALIDOS=(
+    # Domínios internacionais
+    ".com" ".net" ".org" ".info" ".biz" ".edu" ".gov" ".mil" ".int"
+    ".co" ".io" ".me" ".tv" ".cc" ".xyz" ".top" ".site" ".online" ".club" ".shop"
+    ".store" ".tech" ".blog" ".art" ".app" ".dev" ".pro" ".name" ".mobi" ".asia"
+    ".jobs" ".tel" ".travel" ".museum" ".aero" ".coop" ".cat" ".post" ".bio"
+    ".tech" ".us" ".uk" ".eu" ".de" ".cn" ".jp" ".fr" ".es" ".ru" ".au" ".br"
+    ".in" ".it" ".nl" ".se" ".no" ".ch" ".ca" ".mx" ".kr" ".tr" ".hk" ".pl"
+    ".pt" ".be" ".at" ".dk" ".fi" ".cz" ".gr" ".il" ".ro" ".hu" ".sg" ".id"
+    ".sa" ".ae" ".ir" ".th" ".my" ".ph" ".nz" ".za" ".pk" ".cl" ".ve" ".ar"
+    ".uy" ".bo" ".py" ".pe" ".ec" ".gt" ".pa" ".do" ".cr" ".ni" ".hn" ".sv"
+    ".bz" ".ai" ".ag" ".gd" ".ky" ".lc" ".ms" ".vc" ".vg" ".bm" ".bs" ".bb"
+    ".kn" ".tc" ".mu" ".sc" ".dm" ".fm" ".ws" ".sb" ".nu" ".tk" ".cf" ".ga"
+    ".ml" ".gq" ".rw" ".ug" ".tz" ".zm" ".mw" ".bw" ".ls" ".sz" ".na" ".ng"
+    ".ke" ".gh" ".sd" ".et" ".dz" ".tn" ".ma" ".ly" ".ao" ".mz" ".cv" ".gw"
+    ".st" ".cm" ".ci" ".bj" ".bf" ".ne" ".sn" ".gm" ".mr" ".ml" ".tn" ".er"
+    ".dj" ".so" ".ug" ".rw" ".bi" ".sl" ".gm" ".tg" ".gm" ".sl" ".cv" ".ga"
+    ".rw" ".tn" ".zm" ".ls" ".ao" ".bw" ".na" ".sz" ".er" ".so" ".dj" ".mr"
+    ".ga" ".ci" ".bj" ".ne" ".sn" ".ke" ".gh" ".ng" ".et" ".sd" ".ug" ".rw"
+    ".bi" ".ls" ".mw" ".mg" ".zw" ".mz" ".km" ".yt" ".sh" ".tf" ".io" ".gs"
+    ".aq" ".pn" ".bv" ".sj" ".hm" ".tf" ".qa" ".bh" ".kw" ".om" ".ye" ".sy"
+    ".lb" ".jo" ".ps" ".af" ".bd" ".bt" ".mv" ".np" ".lk" ".tj" ".tm" ".uz"
+    ".kg" ".kz" ".mn" ".kh" ".la" ".vn" ".mm" ".np" ".tp" ".ws" ".sb" ".to"
+    ".tv" ".vu" ".fk" ".pf" ".nc" ".tk" ".wf" ".ck" ".nu" ".cx" ".cc" ".as"
+    ".cx" ".cc" ".gs" ".ki" ".nr" ".pw" ".ki" ".nr" ".ck" ".fm" ".ws" ".sb"
+    ".nu" ".tk" ".wf" ".cx" ".cc" ".as" ".fm" ".mh" ".gu" ".mp" ".vi" ".ps"
+    ".re" ".yt" ".tf" ".wf" ".ck" ".nu" ".to" ".vu"
+    
+    # Domínios do Brasil
+    ".com.br" ".net.br" ".org.br" ".gov.br" ".edu.br" ".mil.br" ".adm.br" ".adv.br"
+    ".agr.br" ".am.br" ".arq.br" ".art.br" ".ato.br" ".b.br" ".bio.br" ".blog.br"
+    ".bmd.br" ".cim.br" ".cng.br" ".cnt.br" ".coop.br" ".ecn.br" ".eco.br" ".emp.br"
+    ".eng.br" ".esp.br" ".etc.br" ".eti.br" ".far.br" ".flog.br" ".fm.br" ".fnd.br"
+    ".fot.br" ".fst.br" ".g12.br" ".ggf.br" ".imb.br" ".ind.br" ".inf.br" ".jor.br"
+    ".jus.br" ".lel.br" ".mat.br" ".med.br" ".mus.br" ".not.br" ".ntr.br" ".odo.br"
+    ".ppg.br" ".pro.br" ".psc.br" ".psi.br" ".qsl.br" ".rec.br" ".slg.br" ".srv.br"
+    ".taxi.br" ".teo.br" ".tmp.br" ".trd.br" ".tur.br" ".tv.br" ".vet.br" ".vlog.br"
+    ".wiki.br" ".zlg.br"
 )
 
-TLDs_INTERNACIONAIS=(
-    "com" "org" "net" "info" "biz" "edu" "gov" "int" "mil" "asia" "eu" "tel" "mobi" "name" "pro" "aero" "coop" "museum" "cat" "jobs" "travel" "xxx" "post" "sco" "audio" "auto" "app" "art" "bank" "bar" "cafe" "dev" "eco" "film" "gal" "hotel" "kids" "law" "med" "music" "news" "radio" "shop" "store" "tech" "web" "zone"
-)
-
-# Função para remover acentos e espaços
+# Função para remover acentos e espaços do nome do domínio
 remove_acentos_espacos() {
-    echo "$1" | iconv -f utf8 -t ascii//TRANSLIT | tr -d ' '
+    echo "$1" | iconv -f utf-8 -t ascii//TRANSLIT | sed 's/[^a-zA-Z0-9._-]//g'
 }
 
-# Função para verificar se o TLD é válido
-tld_valido() {
+# Função para verificar se a extensão do domínio é válida
+validar_dominio() {
     local dominio="$1"
-    local tld="${dominio##*.}"
-
-    # Verifica nos TLDs internacionais
-    for valid_tld in "${TLDs_INTERNACIONAIS[@]}"; do
-        if [ "$tld" == "$valid_tld" ]; then
+    for ext in "${DOMINIOS_VALIDOS[@]}"; do
+        if [[ "$dominio" == *"$ext" ]]; then
             return 0
         fi
     done
-
-    # Verifica nos TLDs do Brasil
-    for valid_tld in "${TLDs_BRASIL[@]}"; do
-        if [ "$tld" == "$valid_tld" ]; then
-            return 0
-        fi
-    done
-
     return 1
 }
 
-# Função para remover a extensão do domínio
-remover_extensao_dominio() {
+# Função para extrair o nome do usuário do domínio excluindo a extensão
+extrair_nome_usuario() {
     local dominio="$1"
-    local usuario="${dominio%%.*}"
-    echo "$usuario"
+    for ext in "${DOMINIOS_VALIDOS[@]}"; do
+        if [[ "$dominio" == *"$ext" ]]; then
+            echo "${dominio%$ext}"
+            return 0
+        fi
+    done
 }
 
-# Função que cria cabeçalho HTML
-create_html_header(){
-    echo '<!DOCTYPE html>' >> "$1"
-    echo '<html lang="pt-br">' >> "$1"
-    echo '<head>' >> "$1"
-    echo '    <meta charset="UTF-8">' >> "$1"
-    echo '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' >> "$1"
-    echo "    <title>$2</title>" >> "$1"
-    echo '    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">' >> "$1"
-    echo '    <style>' >> "$1"
-    echo '        body, html {' >> "$1"
-    echo '            height: 100%;' >> "$1"
-    echo '            margin: 0;' >> "$1"
-    echo '            font-family: Arial, Helvetica, sans-serif;' >> "$1"
-    echo '        }' >> "$1"
-    echo '        .bg {' >> "$1"
-    echo '            background-image: url('"'"'https://img.freepik.com/free-photo/zen-stones-sand-background-health-wellness-concept_53876-124303.jpg?t=st=1716698385~exp=1716701985~hmac=ead285b8abd7ce059b0965eb63452f48d2308bebf957990f545328d80b496541&w=2000'"'"');' >> "$1"
-    echo '            height: 100%;' >> "$1"
-    echo '            background-position: center;' >> "$1"
-    echo '            background-repeat: no-repeat;' >> "$1"
-    echo '            background-size: cover;' >> "$1"
-    echo '        }' >> "$1"
-    echo '        .centered-message {' >> "$1"
-    echo '            position: absolute;' >> "$1"
-    echo '            top: 50%;' >> "$1"
-    echo '            left: 50%;' >> "$1"
-    echo '            transform: translate(-50%, -50%);' >> "$1"
-    echo '            color: white;' >> "$1"
-    echo '            text-align: center;' >> "$1"
-    echo '            padding: 20px;' >> "$1"
-    echo '            background: rgba(0, 0, 0, 0.6);' >> "$1"
-    echo '            border-radius: 10px;' >> "$1"
-    echo '        }' >> "$1"
-    echo '    </style>' >> "$1"
-    echo '</head>' >> "$1"
-    echo '<body>' >> "$1"
-}
+# Solicita o nome do domínio ao usuário
+read -p "Digite o nome do domínio (ex: meudominio.com.br): " DOMINIO
 
-# Função que cria rodapé HTML
-create_html_footer(){
-    echo '<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>' >> "$1"
-    echo '</body>' >> "$1"
-    echo '</html>' >> "$1"
-}
+# Limpa o nome do domínio removendo acentos e espaços
+DOMINIO=$(remove_acentos_espacos "$DOMINIO")
 
-# Função que cria página de erro 404
-create_page_404(){
-    echo "Criando página 404 padrão..."
-    USER_HOME=$1
-    PAGE_ERROR_DIR="$USER_HOME/page_error"
-    PATH_ERROR="$PAGE_ERROR_DIR/404.html"
-    TITLE="404 Página não encontrada."
+# Verifica se o domínio é válido
+while ! validar_dominio "$DOMINIO"; do
+    echo "Domínio inválido. Por favor, insira um domínio com uma extensão válida."
+    read -p "Digite o nome do domínio (ex: meudominio.com.br): " DOMINIO
+    DOMINIO=$(remove_acentos_espacos "$DOMINIO")
+done
 
-    # Criar cabeçalho HTML
-    create_html_header "$PATH_ERROR" "$TITLE"
-    # Conteúdo da página
-    echo '    <div class="bg">' >> "$PATH_ERROR"
-    echo '        <div class="centered-message">' >> "$PATH_ERROR"
-    echo "            <h1>$TITLE</h1>" >> "$PATH_ERROR"
-    echo '            <p>A página que você está procurando não foi encontrada.</p>' >> "$PATH_ERROR"
-    echo '            <a href="/" class="btn btn-primary">Voltar para a página inicial</a>' >> "$PATH_ERROR"
-    echo '        </div>' >> "$PATH_ERROR"
-    echo '    </div>' >> "$PATH_ERROR"
-    # Criar rodapé HTML
-    create_html_footer "$PATH_ERROR"
-    echo "Página 404 criada em $PATH_ERROR"
-}
+# Extrai o nome do usuário
+NOME_USUARIO=$(extrair_nome_usuario "$DOMINIO")
+echo "Nome do usuário extraído: $NOME_USUARIO"
 
-# Função que cria página de erro 405
-create_page_405(){
-    echo "Criando página 405 padrão..."
-    USER_HOME=$1
-    PAGE_ERROR_DIR="$USER_HOME/page_error"
-    PATH_ERROR="$PAGE_ERROR_DIR/405.html"
-    TITLE="405 Método não permitido."
+# Define o diretório home do usuário
+USER_HOME="/home/$NOME_USUARIO"
 
-    # Criar cabeçalho HTML
-    create_html_header "$PATH_ERROR" "$TITLE"
-    # Conteúdo da página
-    echo '    <div class="bg">' >> "$PATH_ERROR"
-    echo '        <div class="centered-message">' >> "$PATH_ERROR"
-    echo "            <h1>$TITLE</h1>" >> "$PATH_ERROR"
-    echo '            <p>O método HTTP que você usou para acessar esta página não é permitido.</p>' >> "$PATH_ERROR"
-    echo '            <a href="/" class="btn btn-primary">Voltar para a página inicial</a>' >> "$PATH_ERROR"
-    echo '        </div>' >> "$PATH_ERROR"
-    echo '    </div>' >> "$PATH_ERROR"
-    # Criar rodapé HTML
-    create_html_footer "$PATH_ERROR"
-    echo "Página 405 criada em $PATH_ERROR"
-}
+sudo find "$OME_USUARIO" -type d -exec chmod 0755 {} \;
+sudo find "$OME_USUARIO" -type f -exec chmod 0644 {} \;
 
-# Função que cria página de erro 500
-create_page_500(){
-    echo "Criando página 500 padrão..."
-    USER_HOME=$1
-    PAGE_ERROR_DIR="$USER_HOME/page_error"
-    PATH_ERROR="$PAGE_ERROR_DIR/500.html"
-    TITLE="500 Erro interno do servidor"
 
-    # Criar cabeçalho HTML
-    create_html_header "$PATH_ERROR" "$TITLE"
-    # Conteúdo da página
-    echo '    <div class="bg">' >> "$PATH_ERROR"
-    echo '        <div class="centered-message">' >> "$PATH_ERROR"
-    echo "            <h1>$TITLE</h1>" >> "$PATH_ERROR"
-    echo '            <p>Ocorreu um erro interno no servidor. Por favor, tente novamente mais tarde.</p>' >> "$PATH_ERROR"
-    echo '            <a href="/" class="btn btn-primary">Voltar para a página inicial</a>' >> "$PATH_ERROR"
-    echo '        </div>' >> "$PATH_ERROR"
-    echo '    </div>' >> "$PATH_ERROR"
-    # Criar rodapé HTML
-    create_html_footer "$PATH_ERROR"
-    echo "Página 500 criada em $PATH_ERROR"
-}
+# Cria os diretórios dentro da home do usuário
+PUBLIC_HTML="$USER_HOME/public_html"
+ERROR_PAGES_DIR="$USER_HOME/page_error"
+LOG_DIR="$USER_HOME/logs"
+sudo mkdir -p "$PUBLIC_HTML" "$ERROR_PAGES_DIR" "$LOG_DIR"
 
-# Função que cria o arquivo index.php
-create_index_php(){
-    echo "Criando arquivo index.php..."
-    USER_HOME=$1
-    INDEX_FILE="$USER_HOME/public_html/index.php"
+# Define permissões
+sudo chown -R www-data:www-data "$USER_HOME"
+sudo chmod -R 755 "$USER_HOME"
 
-    echo '<?php' > "$INDEX_FILE"
-    echo 'phpinfo();' >> "$INDEX_FILE"
-    echo '?>' >> "$INDEX_FILE"
-    echo "Arquivo index.php criado em $INDEX_FILE"
-}
+# Cria uma página index padrão
+echo "<html><body><h1>Bem-vindo ao $DOMINIO</h1></body></html>" | sudo tee "$PUBLIC_HTML/index.html"
 
-# Função que cria o arquivo info.php
-create_info_php(){
-    echo "Criando arquivo info.php..."
-    USER_HOME=$1
-    INFO_FILE="$USER_HOME/public_html/info.php"
+# Configuração do Apache
+APACHE_CONF="/etc/apache2/sites-available/$DOMINIO.conf"
 
-    echo '<?php' > "$INFO_FILE"
-    echo 'phpinfo();' >> "$INFO_FILE"
-    echo '?>' >> "$INFO_FILE"
-    echo "Arquivo info.php criado em $INFO_FILE"
-}
+sudo cat > "$APACHE_CONF" << EOL
+<VirtualHost *:80>
+    ServerAdmin webmaster@$DOMINIO
+    ServerName $DOMINIO
+    ServerAlias www.$DOMINIO
+    DocumentRoot $PUBLIC_HTML
 
-# Função para criar um certificado SSL autoassinado
-create_ssl_certificate() {
-    echo "Criando certificado SSL autoassinado..."
-    USER_HOME=$1
-    DOMAIN=$2
-    SSL_DIR="$USER_HOME/ssl"
-    CERT_FILE="$SSL_DIR/$DOMAIN.crt"
-    KEY_FILE="$SSL_DIR/$DOMAIN.key"
+    ErrorLog $LOG_DIR/error.log
+    CustomLog $LOG_DIR/access.log combined
 
-    mkdir -p "$SSL_DIR"
+    <Directory "$PUBLIC_HTML">
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+    </Directory>
 
-    openssl req -newkey rsa:2048 -nodes -keyout "$KEY_FILE" -x509 -days 365 -out "$CERT_FILE" \
-        -subj "/C=BR/ST=Sao Paulo/L=Sao Paulo/O=Colegio Sao Goncalo/OU=TI Colegio Sao Goncalo/CN=$DOMAIN"
+    ErrorDocument 404 /page_error/404.html
+    ErrorDocument 500 /page_error/500.html
+</VirtualHost>
+EOL
 
-    echo "Certificado SSL criado em $CERT_FILE e chave em $KEY_FILE"
-}
+# Habilita o site e reinicia o Apache
+sudo a2ensite "$DOMINIO.conf"
+sudo systemctl reload apache2
 
-# Função que cria um link simbólico para o phpMyAdmin
-create_phpmyadmin_link(){
-    echo "Criando link simbólico para o phpMyAdmin..."
-    USER_HOME=$1
-    PHP_MY_ADMIN_DIR="/usr/share/phpmyadmin"
-    ln -s "$PHP_MY_ADMIN_DIR" "$USER_HOME/public_html/phpmyadmin"
-    echo "Link simbólico para o phpMyAdmin criado em $USER_HOME/public_html/phpmyadmin"
-}
-
-# Função que configura o Nginx
-configure_nginx(){
-    echo "Configurando o Nginx..."
-    USER_HOME=$1
-    DOMAIN=$2
-    NGINX_CONF="/etc/nginx/sites-available/$DOMAIN"
-    NGINX_ENABLED_CONF="/etc/nginx/sites-enabled/$DOMAIN"
-    PAGE_ERROR_DIR="$USER_HOME/page_error"
-    LOGS_DIR="$USER_HOME/logs"
-    SSL_DIR="$USER_HOME/ssl"
-
-    # Criar configuração do Nginx
-    echo "server {" > "$NGINX_CONF"
-    echo "    listen 80;" >> "$NGINX_CONF"
-    echo "    listen [::]:80;" >> "$NGINX_CONF"
-    echo "    server_name $DOMAIN;" >> "$NGINX_CONF"
-    echo "    root $USER_HOME/public_html;" >> "$NGINX_CONF"
-    echo "    index index.php index.html index.htm;" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "    location / {" >> "$NGINX_CONF"
-    echo "        try_files \$uri \$uri/ =404;" >> "$NGINX_CONF"
-    echo "    }" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "    location ~ \.php$ {" >> "$NGINX_CONF"
-    echo "        include snippets/fastcgi-php.conf;" >> "$NGINX_CONF"
-    echo "        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;" >> "$NGINX_CONF"
-    echo "        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;" >> "$NGINX_CONF"
-    echo "        include fastcgi_params;" >> "$NGINX_CONF"
-    echo "    }" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "    error_log $LOGS_DIR/error.log;" >> "$NGINX_CONF"
-    echo "    access_log $LOGS_DIR/access.log;" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "    error_page 403 404 500 502 503 504 /404.html;" >> "$NGINX_CONF"
-    echo "    location = /404.html {" >> "$NGINX_CONF"
-    echo "        root $PAGE_ERROR_DIR;" >> "$NGINX_CONF"
-    echo "    }" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "    ssl_certificate $SSL_DIR/localhost.crt;" >> "$NGINX_CONF"
-    echo "    ssl_certificate_key $SSL_DIR/localhost.key;" >> "$NGINX_CONF"
-    echo "" >> "$NGINX_CONF"
-    echo "}" >> "$NGINX_CONF"
-
-    ln -s "$NGINX_CONF" "$NGINX_ENABLED_CONF"
-    echo "Configuração do Nginx criada em $NGINX_CONF e ativada em $NGINX_ENABLED_CONF"
-}
-
-# Função para criar diretórios
-create_directories(){
-    USER_HOME=$1
-    echo "Criando diretórios..."
-    mkdir -p "$USER_HOME/public_html"
-    mkdir -p "$USER_HOME/page_error"
-    mkdir -p "$USER_HOME/logs"
-    mkdir -p "$USER_HOME/ssl"
-}
-
-# Função para criar o usuário e adicionar ao grupo www-data
-create_user(){
-    USERNAME=$1
-    echo "Criando usuário $USERNAME..."
-    useradd -m -s /bin/bash "$USERNAME"
-    usermod -aG www-data "$USERNAME"
-}
-
-# Função principal do script
-main(){
-    read -p "Digite o domínio (exemplo: exemplo.com): " DOMINIO
-
-    # Verifica a validade do TLD
-    if ! tld_valido "$DOMINIO"; then
-        echo "TLD inválido. Por favor, insira um domínio válido."
-        exit 1
-    fi
-
-    USUARIO=$(remover_extensao_dominio "$DOMINIO")
-    USER_HOME="/home/$USUARIO"
-
-    create_user "$USUARIO"
-    create_directories "$USER_HOME"
-    create_index_php "$USER_HOME"
-    create_info_php "$USER_HOME"
-    create_page_404 "$USER_HOME"
-    create_page_405 "$USER_HOME"
-    create_page_500 "$USER_HOME"
-    create_ssl_certificate "$USER_HOME" "$DOMINIO"
-    configure_nginx "$USER_HOME" "$DOMINIO"
-    create_phpmyadmin_link "$USER_HOME"
-
-    echo "Configuração concluída!"
-}
-
-main
+echo "Configuração do domínio $DOMINIO concluída com sucesso."
