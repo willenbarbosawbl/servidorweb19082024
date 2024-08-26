@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Função para instalar PHP 8.3 e módulos necessários
+# Função para instalar PHP 8.3, módulos necessários e configurar Apache2
 install_php() {
     echo "Instalando PHP 8.3 e módulos..."
     apt update
@@ -15,16 +15,21 @@ install_php() {
     sed -i 's/^;opcache.enable=0/opcache.enable=1/' /etc/php/8.3/fpm/php.ini
     echo "Configuração de produção aplicada ao PHP 8.3."
 
+    echo "Configurando o Apache2 para suportar arquivos PHP..."
+    a2enmod php8.3
+    a2enmod proxy_fcgi setenvif
+    a2enconf php8.3-fpm
+    echo "<FilesMatch \.php$>
+    SetHandler \"proxy:unix:/run/php/php8.3-fpm.sock|fcgi://localhost/\"
+</FilesMatch>" > /etc/apache2/conf-available/php8.3-fpm.conf
+    a2enconf php8.3-fpm
+    systemctl restart apache2
+    echo "Apache2 configurado para suportar arquivos PHP."
+
     echo "Habilitando mod rewrite no Apache2..."
     a2enmod rewrite
     systemctl restart apache2
     echo "mod_rewrite habilitado no Apache2."
-
-    echo "Configurando PHP-FPM como principal..."
-    a2dismod php8.3
-    a2enconf php8.3-fpm
-    systemctl restart apache2 php8.3-fpm
-    echo "PHP 8.3-FPM configurado como principal."
 
     echo "Criando a página info.php..."
     echo "<?php phpinfo(); ?>" > /var/www/html/info.php
@@ -42,7 +47,7 @@ remove_php() {
 
     read -p "Deseja apagar a pasta de configuração do PHP? (s/n): " choice
     if [[ "$choice" == "s" || "$choice" == "S" ]]; then
-        rm -rf /etc/php
+        rm -rf /etc/php/8.3
         echo "Pasta de configuração do PHP apagada."
     fi
 
