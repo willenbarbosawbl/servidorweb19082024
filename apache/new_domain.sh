@@ -79,6 +79,7 @@ while ! validar_dominio "$DOMINIO"; do
     echo "Domínio inválido. Por favor, insira um domínio com uma extensão válida."
     read -p "Digite o nome do domínio (ex: meudominio.com.br): " DOMINIO
     DOMINIO=$(remove_acentos_espacos "$DOMINIO")
+    DOMINIO_COMPLETO="$DOMINIO"
 done
 
 # Função para criar o usuário e adicionar ao grupo www-data
@@ -385,13 +386,13 @@ USER_NAME="$NOME_USUARIO"
 cria_usuario "$USER_NAME"
 criar_pastas "$USER_NAME"
 ajustar_permissoes "$USER_NAME"
-criar_certificado_ssl "$DOMINIO" "$USER_NAME"
+criar_certificado_ssl "$DOMINIO_COMPLETO" "$USER_NAME"
 create_page_404 "$USER_HOME"
 create_page_405 "$USER_HOME"
 create_page_500 "$USER_HOME"
-create_page_index "$USER_HOME" "$DOMINIO"
+create_page_index "$USER_HOME" "$DOMINIO_COMPLETO"
 create_page_info_php "$USER_HOME"
-create_site_apache "$DOMINIO" "$USER_NAME"
+create_site_apache "$DOMINIO_COMPLETO" "$USER_NAME"
 
 
 
