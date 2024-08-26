@@ -308,7 +308,7 @@ create_page_info_php(){
 }
 
 # Cria o arquivo padrão do domínio 
-create_site_default(){
+create_site_apache(){
     DOMINIO=$1
     USUARIO=$2
     SSL_DIR="/home/$USUARIO/ssl"
