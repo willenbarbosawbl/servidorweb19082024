@@ -1,62 +1,106 @@
 #!/bin/bash
 
-# Função para remover um usuário e suas pastas
-remover_usuario() {
-    local usuario="$1"
-    
-    # Remove o usuário do grupo www-data
-    deluser "$usuario" www-data
-    
-    # Pergunta se o usuário deseja apagar a pasta do usuário
-    read -p "Deseja apagar a pasta do usuário /home/$usuario? (s/n): " resposta
-    if [[ "$resposta" =~ ^[sS]$ ]]; then
-        rm -rf /home/"$usuario"
-        echo "Pasta do usuário /home/$usuario apagada."
-    fi
-    
-    # Remove o usuário do sistema
-    deluser --remove-home "$usuario"
-    echo "Usuário $usuario removido."
+# Lista de TLDs internacionais e brasileiros
+TLDs_BRASIL=(
+    "br" "com.br" "net.br" "org.br" "gov.br" "edu.br" "mil.br" "art.br" "blog.br" "eco.br" "emp.br" "ind.br" "inf.br" "med.br" "rec.br" "srv.br" "tur.br" "adv.br" "agr.br" "am.br" "b.br" "cim.br" "cng.br" "cnt.br" "coop.br" "eng.br" "esp.br" "etc.br" "eti.br" "far.br" "fnd.br" "fot.br" "fst.br" "ggf.br" "imb.br" "jor.br" "lel.br" "mat.br" "mus.br" "not.br" "odo.br" "ppg.br" "psc.br" "psi.br" "qsl.br" "slg.br" "tmp.br" "trd.br" "vet.br"
+)
+
+TLDs_INTERNACIONAIS=(
+    "com" "org" "net" "info" "biz" "edu" "gov" "int" "mil" "asia" "eu" "tel" "mobi" "name" "pro" "aero" "coop" "museum" "cat" "jobs" "travel" "xxx" "post" "sco" "audio" "auto" "app" "art" "bank" "bar" "cafe" "dev" "eco" "film" "gal" "hotel" "kids" "law" "med" "music" "news" "radio" "shop" "store" "tech" "web" "zone"
+)
+
+# Função para remover acentos e espaços
+remove_acentos_espacos() {
+    echo "$1" | iconv -f utf8 -t ascii//TRANSLIT | tr -d ' '
 }
 
-# Função para remover arquivos de configuração do Apache
-remover_apache_config() {
+# Função para verificar se o TLD é válido
+tld_valido() {
     local dominio="$1"
-    
-    # Remove o arquivo de configuração do Apache
-    local conf_file="/etc/apache2/sites-available/$dominio.conf"
-    if [[ -f "$conf_file" ]]; then
-        rm "$conf_file"
-        echo "Arquivo de configuração do Apache $dominio removido de /etc/apache2/sites-available."
-        
-        # Remove o link simbólico em sites-enabled, se existir
-        local link_file="/etc/apache2/sites-enabled/$dominio.conf"
-        if [[ -L "$link_file" ]]; then
-            rm "$link_file"
-            echo "Link simbólico removido de /etc/apache2/sites-enabled."
+    local tld="${dominio##*.}"
+
+    # Verifica nos TLDs internacionais
+    for valid_tld in "${TLDs_INTERNACIONAIS[@]}"; do
+        if [ "$tld" == "$valid_tld" ]; then
+            return 0
         fi
-    else
-        echo "Arquivo de configuração do Apache para $dominio não encontrado."
-    fi
-    
-    # Reinicia o Apache para aplicar as mudanças
-    systemctl restart apache2
+    done
+
+    # Verifica nos TLDs do Brasil
+    for valid_tld in "${TLDs_BRASIL[@]}"; do
+        if [ "$tld" == "$valid_tld" ]; então
+            return 0
+        fi
+    done
+
+    return 1
 }
 
-# Verifica se o script está sendo executado como root
-if [[ "$EUID" -ne 0 ]]; then
-    echo "Este script deve ser executado como root." >&2
+# Função para remover a extensão do domínio
+remover_extensao_dominio() {
+    local dominio="$1"
+    local usuario="${dominio%%.*}"
+    echo "$usuario"
+}
+
+# Pergunta pelo domínio
+read -p "Por favor, informe o domínio: " dominio
+
+# Remove acentos e espaços do domínio
+dominio=$(remove_acentos_espacos "$dominio")
+
+# Verifica se o TLD é válido
+if ! tld_valido "$dominio"; então
+    echo "TLD do domínio não é válido. Por favor, insira um domínio válido."
     exit 1
 fi
 
-# Solicita o nome do usuário e do domínio
-read -p "Informe o nome do usuário a ser removido: " usuario
-read -p "Informe o domínio para remover a configuração do Apache: " dominio
+# Extrai o nome do usuário a partir do domínio
+usuario=$(remover_extensao_dominio "$dominio")
 
-# Remove o usuário e seus arquivos
-remover_usuario "$usuario"
+# Confirmação antes de prosseguir com a remoção
+read -p "Tem certeza de que deseja remover o usuário '$usuario' e o domínio '$dominio'? (s/n): " confirmacao
+if [ "$confirmacao" != "s" ]; então
+    echo "Operação cancelada."
+    exit 1
+fi
 
-# Remove a configuração do Apache
-remover_apache_config "$dominio"
+# Remover o usuário e o diretório home do usuário
+if id "$usuario" &>/dev/null; então
+    sudo userdel -r "$usuario"
+    if [ $? -eq 0 ]; então
+        echo "Usuário '$usuario' e seu diretório home foram removidos com sucesso."
+    else
+        echo "Erro ao remover o usuário '$usuario'."
+    fi
+else
+    echo "Usuário '$usuario' não encontrado."
+fi
 
-echo "Processo concluído."
+# Remover arquivo de configuração do Apache2
+config_file="/etc/apache2/sites-available/$dominio.conf"
+if [ -f "$config_file" ]; então
+    sudo rm "$config_file"
+    echo "Arquivo de configuração do Apache2 para '$dominio' removido."
+else
+    echo "Arquivo de configuração do Apache2 para '$dominio' não encontrado."
+fi
+
+# Remover link simbólico do arquivo de configuração no sites-enabled
+enabled_link="/etc/apache2/sites-enabled/$dominio.conf"
+if [ -f "$enabled_link" ]; então
+    sudo rm "$enabled_link"
+    echo "Link simbólico do Apache2 para '$dominio' removido."
+else
+    echo "Link simbólico do Apache2 para '$dominio' não encontrado."
+fi
+
+# Reiniciar o Apache2
+sudo systemctl reload apache2
+if [ $? -eq 0 ]; então
+    echo "Apache2 recarregado com sucesso."
+else
+    echo "Erro ao recarregar o Apache2."
+fi
+
+echo "Operação concluída."

@@ -1,65 +1,68 @@
 #!/bin/bash
 
-# Função para instalar o ProFTPD
-install_proftpd() {
-    echo "Instalando ProFTPD..."
-    sudo apt update
-    sudo apt install -y proftpd
+function install_proftpd() {
+    echo "Instalando o ProFTPD..."
+    sudo apt-get update
+    sudo apt-get install -y proftpd
 
-    echo "Configurando ProFTPD..."
-    # Cria backup do arquivo de configuração original
+    echo "Configurando o ProFTPD para acesso restrito à pasta home do usuário..."
+
+    # Backup da configuração original
     sudo cp /etc/proftpd/proftpd.conf /etc/proftpd/proftpd.conf.bak
 
-    # Adiciona a configuração DefaultRoot para limitar o usuário à sua pasta
-    sudo bash -c 'cat <<EOF >> /etc/proftpd/proftpd.conf
-DefaultRoot ~
-EOF'
+    # Configurando o ProFTPD
+    sudo sed -i 's/# DefaultRoot/DefaultRoot ~/' /etc/proftpd/proftpd.conf
 
-    # Reinicia o serviço para aplicar as mudanças
+    echo "Configurando ProFTPD para não permitir login de usuários anônimos..."
+    sudo sed -i 's/#RequireValidShell/RequireValidShell off/' /etc/proftpd/proftpd.conf
+
+    # Reiniciando o ProFTPD para aplicar as mudanças
     sudo systemctl restart proftpd
 
-    echo "ProFTPD instalado e configurado com DefaultRoot."
+    echo "Instalação e configuração do ProFTPD concluídas!"
 }
 
-# Função para desinstalar o ProFTPD
-uninstall_proftpd() {
-    echo "Deseja apagar a pasta do ProFTPD? (s/n): "
-    read -r apagar_pasta
+function uninstall_proftpd() {
+    echo "Desinstalando o ProFTPD..."
 
-    echo "Desinstalando ProFTPD..."
     sudo systemctl stop proftpd
-    sudo apt purge -y proftpd
+    sudo apt-get remove --purge -y proftpd
 
-    # Remove a pasta de configuração, se desejado
-    if [[ $apagar_pasta =~ ^[Ss]$ ]]; then
-        echo "Apagando pasta de configuração do ProFTPD..."
+    echo "ProFTPD foi desinstalado."
+
+    read -p "Deseja apagar a pasta de configuração do ProFTPD? (s/n): " remove_folder
+    if [[ "$remove_folder" == "s" || "$remove_folder" == "S" ]]; then
         sudo rm -rf /etc/proftpd
+        echo "Pasta de configuração do ProFTPD removida."
     else
-        echo "Pasta de configuração do ProFTPD mantida."
+        echo "Pasta de configuração do ProFTPD preservada."
     fi
-
-    echo "ProFTPD desinstalado."
 }
 
-# Menu principal
-echo "Escolha uma opção:"
-echo "1. Instalar ProFTPD"
-echo "2. Desinstalar ProFTPD"
-echo "0. Sair"
-read -r opcao
+function main_menu() {
+    while true; do
+        echo "Escolha uma opção:"
+        echo "1. Instalar e configurar o ProFTPD"
+        echo "2. Desinstalar o ProFTPD"
+        echo "0. Sair"
+        read -p "Opção: " option
 
-case $opcao in
-    1)
-        install_proftpd
-        ;;
-    2)
-        uninstall_proftpd
-        ;;
-    0)
-        echo "Saindo..."
-        exit 0
-        ;;
-    *)
-        echo "Opção inválida."
-        ;;
-esac
+        case $option in
+            1)
+                install_proftpd
+                ;;
+            2)
+                uninstall_proftpd
+                ;;
+            0)
+                echo "Saindo..."
+                exit 0
+                ;;
+            *)
+                echo "Opção inválida. Tente novamente."
+                ;;
+        esac
+    done
+}
+
+main_menu

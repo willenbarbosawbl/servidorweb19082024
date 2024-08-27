@@ -1,65 +1,58 @@
 #!/bin/bash
 
-# Função para instalar phpMyAdmin
+# Função para instalar o phpMyAdmin
 install_phpmyadmin() {
+    echo "Atualizando pacotes..."
+    sudo apt update
+    
     echo "Instalando phpMyAdmin..."
-    sudo apt-get update
-    sudo apt-get install phpmyadmin -y
-
-    echo "Configurando phpMyAdmin..."
+    sudo apt install phpmyadmin -y
+    
+    echo "Configurando phpMyAdmin com o Apache2..."
     sudo ln -s /usr/share/phpmyadmin /var/www/html/phpmyadmin
-
-    echo "phpMyAdmin instalado e configurado com sucesso."
+    
+    echo "phpMyAdmin instalado com sucesso!"
 }
 
-# Função para desinstalar phpMyAdmin
+# Função para desinstalar o phpMyAdmin
 uninstall_phpmyadmin() {
     echo "Desinstalando phpMyAdmin..."
-    sudo apt-get remove --purge phpmyadmin -y
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
-
-    # Perguntar se deseja apagar a pasta phpMyAdmin
-    read -rp "Deseja apagar a pasta phpMyAdmin (/usr/share/phpmyadmin)? (s/n): " apagar_pasta
-    if [ "$apagar_pasta" = "s" ]; then
+    sudo apt remove phpmyadmin -y
+    sudo apt purge phpmyadmin -y
+    
+    echo "phpMyAdmin foi desinstalado."
+    
+    read -p "Deseja apagar a pasta do phpMyAdmin (/usr/share/phpmyadmin)? (s/N): " delete_folder
+    if [[ "$delete_folder" =~ ^[Ss]$ ]]; then
         sudo rm -rf /usr/share/phpmyadmin
-        echo "Pasta phpMyAdmin apagada."
+        sudo rm -rf /var/www/html/phpmyadmin
+        echo "Pasta do phpMyAdmin apagada."
+    else
+        echo "A pasta do phpMyAdmin não foi apagada."
     fi
-
-    echo "phpMyAdmin desinstalado e sistema limpo."
-}
-
-# Função para limpar o sistema após instalação ou desinstalação
-clean_system() {
-    echo "Limpando o sistema..."
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
-    echo "Sistema limpo."
 }
 
 # Menu de opções
 while true; do
     echo "Escolha uma opção:"
-    echo "1) Instalar phpMyAdmin"
-    echo "2) Desinstalar phpMyAdmin"
-    echo "0) Sair"
-    read -rp "Opção: " opcao
+    echo "1. Instalar phpMyAdmin"
+    echo "2. Desinstalar phpMyAdmin"
+    echo "0. Sair"
+    read -p "Opção: " option
 
-    case $opcao in
+    case $option in
         1)
             install_phpmyadmin
-            clean_system
             ;;
         2)
             uninstall_phpmyadmin
-            clean_system
             ;;
         0)
             echo "Saindo..."
-            exit 0
+            break
             ;;
         *)
-            echo "Opção inválida. Tente novamente."
+            echo "Opção inválida, por favor escolha 1, 2 ou 0."
             ;;
     esac
 done

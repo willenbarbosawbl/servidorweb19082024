@@ -3,59 +3,74 @@
 # Função para instalar o MariaDB
 install_mariadb() {
     echo "Instalando MariaDB..."
-    sudo apt-get update
-    sudo apt-get install mariadb-server -y
-    sudo systemctl enable mariadb
-    sudo systemctl start mariadb
+    sudo apt update
+    sudo apt install -y mariadb-server mariadb-client
 
-    echo "Configurando MariaDB com 'mysql_secure_installation'..."
+    if [ $? -eq 0 ]; then
+        echo "MariaDB instalado com sucesso."
+        configure_mariadb
+    else
+        echo "Falha na instalação do MariaDB."
+        exit 1
+    fi
+}
+
+# Função para configurar o MariaDB
+configure_mariadb() {
+    echo "Configurando MariaDB..."
     sudo mysql_secure_installation
 
-    echo "MariaDB instalado e configurado com sucesso."
+    if [ $? -eq 0 ]; then
+        echo "MariaDB configurado com sucesso."
+    else
+        echo "Falha na configuração do MariaDB."
+        exit 1
+    fi
 }
 
 # Função para desinstalar o MariaDB
 uninstall_mariadb() {
     echo "Desinstalando MariaDB..."
-    sudo systemctl stop mariadb
-    sudo apt-get remove --purge mariadb-server mariadb-client mariadb-common mariadb-server-core mariadb-client-core -y
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
+    sudo apt remove --purge -y mariadb-server mariadb-client
 
-    # Perguntar se deseja apagar a pasta do MariaDB
-    read -rp "Deseja apagar a pasta do MariaDB (/var/lib/mysql)? (s/n): " apagar_pasta
-    if [ "$apagar_pasta" = "s" ]; then
-        sudo rm -rf /var/lib/mysql
-        echo "Pasta do MariaDB apagada."
+    if [ $? -eq 0 ]; then
+        echo "MariaDB desinstalado com sucesso."
+
+        # Perguntar se o usuário deseja apagar a pasta do MariaDB
+        read -p "Deseja apagar a pasta /var/lib/mysql? (s/n): " remove_folder
+        if [ "$remove_folder" == "s" ]; then
+            sudo rm -rf /var/lib/mysql
+            echo "Pasta /var/lib/mysql removida."
+        else
+            echo "A pasta /var/lib/mysql não foi removida."
+        fi
+
+        sudo apt autoremove -y
+        sudo apt clean
+    else
+        echo "Falha na desinstalação do MariaDB."
+        exit 1
     fi
-
-    echo "MariaDB desinstalado e sistema limpo."
 }
 
-# Função para limpar o sistema após instalação ou desinstalação
-clean_system() {
-    echo "Limpando o sistema..."
-    sudo apt-get autoremove -y
-    sudo apt-get autoclean
-    echo "Sistema limpo."
-}
-
-# Menu de opções
+# Menu principal
 while true; do
     echo "Escolha uma opção:"
-    echo "1) Instalar MariaDB"
-    echo "2) Desinstalar MariaDB"
-    echo "0) Sair"
-    read -rp "Opção: " opcao
+    echo "1. Instalar MariaDB"
+    echo "2. Configurar MariaDB"
+    echo "3. Desinstalar MariaDB"
+    echo "0. Sair"
+    read -p "Opção: " option
 
-    case $opcao in
+    case $option in
         1)
             install_mariadb
-            clean_system
             ;;
         2)
+            configure_mariadb
+            ;;
+        3)
             uninstall_mariadb
-            clean_system
             ;;
         0)
             echo "Saindo..."

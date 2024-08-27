@@ -1,74 +1,94 @@
 #!/bin/bash
 
-# Função para instalar PHP 8.3, módulos necessários e configurar Apache2
-install_php() {
-    echo "Instalando PHP 8.3 e módulos..."
-    apt update
-    apt install -y php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip libapache2-mod-php8.3
-    echo "PHP 8.3 e módulos instalados com sucesso."
+PHP_INI="/etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/apache2/php.ini"
+PHP_FOLDER="/etc/php/"
 
-    echo "Configurando PHP 8.3 para produção..."
-    sed -i 's/^;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/' /etc/php/8.3/fpm/php.ini
-    sed -i 's/^display_errors = On/display_errors = Off/' /etc/php/8.3/fpm/php.ini
-    sed -i 's/^expose_php = On/expose_php = Off/' /etc/php/8.3/fpm/php.ini
-    sed -i 's/^;session.cookie_secure =/session.cookie_secure =/' /etc/php/8.3/fpm/php.ini
-    sed -i 's/^;opcache.enable=0/opcache.enable=1/' /etc/php/8.3/fpm/php.ini
-    echo "Configuração de produção aplicada ao PHP 8.3."
+# Função para ajustar o PHP para ambiente de produção
+configure_php_for_production() {
+    echo "Configurando PHP para ambiente de produção..."
 
-    echo "Configurando o Apache2 para suportar arquivos PHP..."
-    a2enmod php8.3
-    a2enmod proxy_fcgi setenvif
-    a2enconf php8.3-fpm
-    echo "<FilesMatch \.php$>
-    SetHandler \"proxy:unix:/run/php/php8.3-fpm.sock|fcgi://localhost/\"
-</FilesMatch>" > /etc/apache2/conf-available/php8.3-fpm.conf
-    a2enconf php8.3-fpm
-    systemctl restart apache2
-    echo "Apache2 configurado para suportar arquivos PHP."
+    # Realizando alterações no php.ini
+    sed -i "s/^expose_php = On/expose_php = Off/" $PHP_INI
+    sed -i "s/^display_errors = On/display_errors = Off/" $PHP_INI
+    sed -i "s/^display_startup_errors = On/display_startup_errors = Off/" $PHP_INI
+    sed -i "s/^track_errors = On/track_errors = Off/" $PHP_INI
+    sed -i "s/^log_errors = Off/log_errors = On/" $PHP_INI
+    sed -i "s/^error_log = .*/error_log = \/var\/log\/php_errors.log/" $PHP_INI
+    sed -i "s/^session.use_strict_mode = 0/session.use_strict_mode = 1/" $PHP_INI
+    sed -i "s/^session.cookie_httponly =/session.cookie_httponly = 1/" $PHP_INI
+    sed -i "s/^session.cookie_secure =/session.cookie_secure = 1/" $PHP_INI
+    sed -i "s/^session.use_only_cookies = 0/session.use_only_cookies = 1/" $PHP_INI
+    sed -i "s/^memory_limit = .*/memory_limit = 128M/" $PHP_INI
+    sed -i "s/^max_execution_time = .*/max_execution_time = 30/" $PHP_INI
+    sed -i "s/^upload_max_filesize = .*/upload_max_filesize = 10M/" $PHP_INI
+    sed -i "s/^post_max_size = .*/post_max_size = 10M/" $PHP_INI
 
-    echo "Habilitando mod rewrite no Apache2..."
-    a2enmod rewrite
-    systemctl restart apache2
-    echo "mod_rewrite habilitado no Apache2."
+    # Outras medidas de segurança
+    echo "Verificando e aplicando outras medidas de segurança..."
 
-    echo "Criando a página info.php..."
-    echo "<?php phpinfo(); ?>" > /var/www/html/info.php
-    chown www-data:www-data /var/www/html/info.php
-    chmod 644 /var/www/html/info.php
-    echo "Página info.php criada em /var/www/html/info.php."
-}
-
-# Função para remover PHP 8.3 e módulos
-remove_php() {
-    echo "Removendo PHP 8.3 e módulos..."
-    apt purge -y php8.3 php8.3-fpm php8.3-mysql php8.3-imap php8.3-ldap php8.3-xml php8.3-curl php8.3-mbstring php8.3-zip libapache2-mod-php8.3
-    apt autoremove -y
-    echo "PHP 8.3 e módulos removidos com sucesso."
-
-    read -p "Deseja apagar a pasta de configuração do PHP? (s/n): " choice
-    if [[ "$choice" == "s" || "$choice" == "S" ]]; then
-        rm -rf /etc/php/8.3
-        echo "Pasta de configuração do PHP apagada."
+    # Criar diretório seguro para logs PHP
+    if [ ! -d "/var/log/php" ]; then
+        mkdir /var/log/php
+        chown www-data:www-data /var/log/php
     fi
 
-    echo "Removendo a página info.php..."
-    rm -f /var/www/html/info.php
-    echo "Página info.php removida."
+    echo "Reiniciando o Apache2 para aplicar as configurações..."
+    systemctl restart apache2
+
+    echo "Configuração de produção aplicada com sucesso!"
 }
 
-# Menu principal
-while true; do
-    echo "1. Instalar PHP 8.3"
-    echo "2. Configurar PHP 8.3 para produção"
-    echo "3. Remover PHP 8.3"
-    echo "0. Sair"
-    read -p "Escolha uma opção: " option
+# Função para instalar o PHP e módulos
+install_php() {
+    echo "Instalando PHP e módulos..."
+    apt update
+    apt install libapache2-mod-php php php-mysql php-cli php-pear php-gmp php-gd php-bcmath php-mbstring php-curl php-xml php-zip -y
+    
+    configure_php_for_production
 
-    case $option in
-        1) install_php ;;
-        2) echo "Configurações já aplicadas durante a instalação." ;;
-        3) remove_php ;;
-        0) echo "Saindo..."; exit 0 ;;
-        *) echo "Opção inválida. Tente novamente." ;;
-    esac
-done
+    echo "Criando arquivo phpinfo.php..."
+    echo '<?php phpinfo(); ?>' > /var/www/html/phpinfo.php
+    echo "PHP instalado e configurado com sucesso!"
+    php --version
+}
+
+# Função para desinstalar o PHP e módulos
+uninstall_php() {
+    echo "Desinstalando PHP e módulos..."
+    apt remove --purge libapache2-mod-php php php-mysql php-cli php-pear php-gmp php-gd php-bcmath php-mbstring php-curl php-xml php-zip -y
+    apt autoremove -y
+    echo "PHP desinstalado com sucesso!"
+    
+    # Apagar a pasta de configuração do PHP e o arquivo phpinfo.php
+    read -p "Deseja apagar a pasta do PHP (/etc/php/) e o arquivo /var/www/html/phpinfo.php? (s/n): " delete_php_folder
+    if [[ $delete_php_folder == "s" || $delete_php_folder == "S" ]]; then
+        rm -rf $PHP_FOLDER
+        rm -f /var/www/html/phpinfo.php
+        echo "Pasta do PHP e arquivo phpinfo.php removidos."
+    else
+        echo "Pasta do PHP e arquivo phpinfo.php mantidos."
+    fi
+}
+
+# Menu de opções
+echo "Escolha uma opção:"
+echo "1) Instalar PHP"
+echo "2) Desinstalar PHP"
+echo "0) Sair"
+read -p "Opção: " option
+
+case $option in
+    1)
+        install_php
+        ;;
+    2)
+        uninstall_php
+        ;;
+    0)
+        echo "Saindo..."
+        exit 0
+        ;;
+    *)
+        echo "Opção inválida!"
+        ;;
+esac
